@@ -164,15 +164,3 @@ def test_union_model():
     }
     fastavro.parse_schema(model_avro)
     assert json_to_avro(Model.schema()) == model_avro
-
-
-class StrEnum(str, Enum):
-    first = 'F'
-    second = 'S'
-
-
-class Model(BaseModel):
-    string_enum: StrEnum
-
-
-print(Model.schema())
