@@ -1,130 +1,116 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
 
-def json_to_avro(json_schema: dict,
-                 title: Optional[str] = None,
-                 namespace: Optional[str] = None):
-    result = {
-        'name': title if title is not None else json_schema['title'],
-        'type': 'record',
-        'fields': convert_all_json_properties_to_avro_fields(json_schema)
-    }
-    if namespace is not None:
-        result['namespace'] = namespace
-    return result
+class JsonSchema:
+    def __init__(self, json_schema: dict):
+        self.schema = json_schema
 
-
-def convert_all_json_properties_to_avro_fields(json_schema: dict):
-    required_field = json_schema.get('required', [])
-    return [
-        json_property_to_avro_field(property_name, property_data,
-                                    property_name in required_field,
-                                    json_schema)
-        for property_name, property_data in json_schema['properties'].items()
-    ]
-
-
-def json_property_to_avro_field(property_name: Optional[str],
-                                property_data: dict, required: bool,
-                                whole_schema: dict):
-    type_field = property_data.get('type')
-    ref_field = property_data.get('$ref')
-    default_field = property_data.get('default')
-    format_field = property_data.get('format')
-    enum_field = property_data.get('enum')
-    items_field = property_data.get('items')
-    any_of_field = property_data.get('anyOf')
-
-    avro_type = get_avro_type(type_field, format_field, enum_field,
-                              any_of_field, ref_field)
-    if avro_type == 'enum':
-        return json_enum_to_avro_field(property_name, enum_field)
-    elif avro_type == 'array':
-        return json_array_to_avro_field(property_name, items_field,
-                                        whole_schema)
-    elif avro_type == 'union':
-        return json_union_to_avro_field(property_name, any_of_field,
-                                        whole_schema)
-    elif avro_type == 'ref':
-        return json_ref_to_avro_record(property_name, ref_field, whole_schema)
-    else:
-        return json_primitive_type_to_avro_field(property_name, avro_type,
-                                                 required, default_field)
-
-
-def get_avro_type(type_field: str, format_field: Optional[str],
-                  enum_field: List[str], any_of_field: List[dict],
-                  ref_field: Optional[str]):
-    if type_field == 'integer':
-        return 'long'
-    elif type_field == 'number':
-        return 'double'
-    elif type_field == 'string' and format_field == 'binary':
-        return 'bytes'
-    elif enum_field is not None:
-        if type_field == 'string':
-            return 'enum'
-        raise TypeError(f"Cannot have Enum of type {type_field}")
-    elif any_of_field is not None:
-        return 'union'
-    elif ref_field is not None:
-        return 'ref'
-    else:
-        return type_field
-
-
-def json_enum_to_avro_field(property_name: Optional[str],
-                            enum_list: List[str]):
-    result = {'name': property_name} if property_name is not None else {}
-    result['type'] = {
-        'name': property_name,
-        'type': 'enum',
-        'symbols': enum_list
-    }
-    return result
-
-
-def json_array_to_avro_field(property_name: Optional[str], items: dict,
-                             whole_schema: dict):
-    result = {'name': property_name} if property_name is not None else {}
-    result['type'] = {
-        'type': 'array',
-        'items': json_property_to_avro_field(None, items, True, whole_schema)
-    }
-    return result
-
-
-def json_union_to_avro_field(property_name: Optional[str],
-                             any_of_list: List[dict], whole_schema: dict):
-    result = {'name': property_name} if property_name is not None else {}
-    result['type'] = [
-        json_property_to_avro_field(None, item, True, whole_schema)
-        for item in any_of_list
-    ]
-    return result
-
-
-def json_ref_to_avro_record(property_name: Optional[str], ref_field: str,
-                            whole_schema: dict):
-    ref = ref_field.split('/')
-    selector = whole_schema
-    if ref[0] == '#':
-        for specifier in ref[1:]:
-            selector = selector[specifier]
-        result = {'name': property_name} if property_name is not None else {}
-        result['type'] = json_to_avro(selector, title=specifier)
+    def to_avro(self, namespace: Optional[str] = None) -> dict:
+        result = self._get_avro_type_and_call(self.schema)
+        if namespace is not None:
+            result['namespace'] = namespace
         return result
-    else:
-        raise TypeError(f"Wont resolve {ref[0]}")
 
+    def _get_avro_type_and_call(self,
+                                schema: dict,
+                                name: Optional[str] = None,
+                                required: bool = True) -> dict:
+        type_field = schema.get('type')
+        default = schema.get('default')
+        if type_field == 'object':
+            return self._json_object_to_avro_record(schema)
+        elif schema.get('format') == 'binary':
+            return self._json_primitive_type_to_avro_field(
+                name, 'bytes', required, default)
+        elif type_field == 'integer':
+            return self._json_primitive_type_to_avro_field(
+                name, 'long', required, default)
+        elif type_field == 'number':
+            return self._json_primitive_type_to_avro_field(
+                name, 'double', required, default)
+        elif type_field == 'array':
+            return self._json_array_to_avro_array(name, schema)
+        elif 'enum' in schema:
+            if type_field == 'string':
+                return self._json_enum_to_avro_enum(name, schema)
+            raise TypeError(f"f{name} Cannot have Enum of type {type_field}")
+        elif 'anyOf' in schema:
+            return self._json_anyof_to_avro_union(name, schema)
+        elif '$ref' in schema:
+            return self._json_ref_to_avro_record(name, schema)
+        elif type_field == 'string':
+            return self._json_primitive_type_to_avro_field(
+                name, 'string', required, default)
+        else:
+            raise TypeError(f"Unknown type.")
 
-def json_primitive_type_to_avro_field(property_name: Optional[str],
-                                      avro_type: str, required: bool,
-                                      default_field):
-    result = {'name': property_name} if property_name is not None else {}
-    if default_field is None:
-        result['type'] = avro_type if required else ['null', avro_type]
-    else:
-        result['type'] = avro_type
-        result['default'] = default_field
-    return result
+    def _json_object_to_avro_record(self, json_object: dict) -> dict:
+        required_field = json_object.get('required', [])
+        return {
+            'name':
+            json_object['title'],
+            'type':
+            'record',
+            'fields': [
+                self._get_avro_type_and_call(property_data, property_name,
+                                             property_name in required_field)
+                for property_name, property_data in
+                json_object['properties'].items()
+            ]
+        }
+
+    def _json_primitive_type_to_avro_field(
+            self,
+            name: Optional[str],
+            object_type: str,
+            required: bool,
+            default: Optional[Any] = None) -> dict:
+        result = {'name': name} if name is not None else {}
+        if default is None:
+            result['type'] = object_type if required else ['null', object_type]
+        else:
+            result.update({'type': object_type, 'default': default})
+        return result
+
+    def _json_array_to_avro_array(self, name: str, schema: dict):
+        return {
+            'name': name,
+            'type': {
+                'type': 'array',
+                'items': self._get_avro_type_and_call(schema['items'])
+            }
+        }
+
+    def _json_enum_to_avro_enum(self, name: str, schema: dict):
+        return {
+            'name': name,
+            'type': {
+                'name': name,
+                'type': 'enum',
+                'symbols': schema['enum']
+            }
+        }
+
+    def _json_anyof_to_avro_union(self, name: str, schema: dict):
+        return {
+            'name':
+            name,
+            'type':
+            [self._get_avro_type_and_call(item) for item in schema['anyOf']]
+        }
+
+    def _json_ref_to_avro_record(self, name: str, schema: dict):
+        selector = self._find(schema['$ref'])
+        result = {'name': name} if name is not None else {}
+        result['type'] = self._get_avro_type_and_call(selector)
+        return result
+
+    def _find(self, reference: str):
+        ref_list = reference.split('/')
+        selector = self.schema
+        if ref_list[0] == '#':
+            for specifier in ref_list[1:]:
+                selector = selector[specifier]
+            return selector
+        else:
+            raise TypeError(f"Wont resolve {ref_list[0]}")

@@ -7,7 +7,7 @@ import fastavro
 from pydantic import BaseModel
 
 from avro_schema import __version__
-from avro_schema.convertor import json_to_avro
+from avro_schema.convertor import JsonSchema
 
 
 def test_version():
@@ -27,7 +27,7 @@ def test_string_model():
         }]
     }
     fastavro.parse_schema(model_avro)
-    assert json_to_avro(Model.schema()) == model_avro
+    assert JsonSchema(Model.schema()).to_avro() == model_avro
 
 
 def test_namespace():
@@ -45,7 +45,7 @@ def test_namespace():
         }]
     }
     fastavro.parse_schema(model_avro)
-    assert json_to_avro(Model.schema(), namespace=namespace) == model_avro
+    assert JsonSchema(Model.schema()).to_avro(namespace) == model_avro
 
 
 def test_int_and_string_model():
@@ -67,7 +67,7 @@ def test_int_and_string_model():
         }]
     }
     fastavro.parse_schema(model_avro)
-    assert json_to_avro(Model.schema()) == model_avro
+    assert JsonSchema(Model.schema()).to_avro() == model_avro
 
 
 def test_optional_and_default_model():
@@ -90,7 +90,7 @@ def test_optional_and_default_model():
         }]
     }
     fastavro.parse_schema(model_avro)
-    assert json_to_avro(Model.schema()) == model_avro
+    assert JsonSchema(Model.schema()).to_avro() == model_avro
 
 
 def test_bytes_and_float_model():
@@ -112,7 +112,7 @@ def test_bytes_and_float_model():
         }]
     }
     fastavro.parse_schema(model_avro)
-    assert json_to_avro(Model.schema()) == model_avro
+    assert JsonSchema(Model.schema()).to_avro() == model_avro
 
 
 class StrEnum(str, Enum):
@@ -139,7 +139,7 @@ def test_enum_model():
         }]
     }
     fastavro.parse_schema(model_avro)
-    assert json_to_avro(Model.schema()) == model_avro
+    assert JsonSchema(Model.schema()).to_avro() == model_avro
 
 
 def test_list_model():
@@ -162,7 +162,7 @@ def test_list_model():
         }]
     }
     fastavro.parse_schema(model_avro)
-    assert json_to_avro(Model.schema()) == model_avro
+    assert JsonSchema(Model.schema()).to_avro() == model_avro
 
 
 def test_union_model():
@@ -184,7 +184,7 @@ def test_union_model():
         }]
     }
     fastavro.parse_schema(model_avro)
-    assert json_to_avro(Model.schema()) == model_avro
+    assert JsonSchema(Model.schema()).to_avro() == model_avro
 
 
 class OneIntModel(BaseModel):
@@ -213,4 +213,4 @@ def test_simple_recursive_model():
         }]
     }
     fastavro.parse_schema(model_avro)
-    assert json_to_avro(Model.schema()) == model_avro
+    assert JsonSchema(Model.schema()).to_avro() == model_avro
