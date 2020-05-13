@@ -93,11 +93,34 @@ def test_optional_and_default_model():
     assert json_to_avro(Model.schema()) == model_avro
 
 
-def test_enum_model():
-    class StrEnum(str, Enum):
-        first = 'F'
-        second = 'S'
+def test_bytes_and_float_model():
+    class Model(BaseModel):
+        bytes_field: bytes
+        float_field: float
 
+    model_avro = {
+        'name':
+        'Model',
+        'type':
+        'record',
+        'fields': [{
+            'name': 'bytes_field',
+            'type': 'bytes'
+        }, {
+            'name': 'float_field',
+            'type': 'double'
+        }]
+    }
+    fastavro.parse_schema(model_avro)
+    assert json_to_avro(Model.schema()) == model_avro
+
+
+class StrEnum(str, Enum):
+    first = 'F'
+    second = 'S'
+
+
+def test_enum_model():
     class Model(BaseModel):
         string_enum: StrEnum
 
@@ -115,8 +138,6 @@ def test_enum_model():
             }
         }]
     }
-    print(Model.schema())
-    print(json_to_avro(Model.schema()))
     fastavro.parse_schema(model_avro)
     assert json_to_avro(Model.schema()) == model_avro
 
