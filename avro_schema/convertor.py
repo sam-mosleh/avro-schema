@@ -100,10 +100,14 @@ class JsonSchema:
         }
 
     def _json_ref_to_avro_record(self, name: str, schema: dict):
-        selector = self._find(schema['$ref'])
-        result = {'name': name} if name is not None else {}
-        result['type'] = self._get_avro_type_and_call(selector)
-        return result
+        selected_schema = self._find(schema['$ref'])
+        if name is not None:
+            return {
+                'name': name,
+                'type': self._get_avro_type_and_call(selected_schema)
+            }
+        else:
+            return self._get_avro_type_and_call(selected_schema)
 
     def _find(self, reference: str):
         ref_list = reference.split('/')

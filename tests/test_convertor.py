@@ -214,3 +214,45 @@ def test_simple_recursive_model():
     }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
+
+
+class LayeredModel(BaseModel):
+    one_int: OneIntModel
+    string_field: str
+
+
+def test_two_layer_recursive_model():
+    class Model(BaseModel):
+        layerd: LayeredModel
+
+    model_avro = {
+        'name':
+        'Model',
+        'type':
+        'record',
+        'fields': [{
+            'name': 'layerd',
+            'type': {
+                'name':
+                'LayeredModel',
+                'type':
+                'record',
+                'fields': [{
+                    'name': 'one_int',
+                    'type': {
+                        'name': 'OneIntModel',
+                        'type': 'record',
+                        'fields': [{
+                            'name': 'int_field',
+                            'type': 'long'
+                        }]
+                    }
+                }, {
+                    'name': 'string_field',
+                    'type': 'string'
+                }]
+            }
+        }]
+    }
+    fastavro.parse_schema(model_avro)
+    assert JsonSchema(Model.schema()).to_avro() == model_avro
