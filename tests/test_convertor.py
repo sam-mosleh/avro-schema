@@ -45,7 +45,7 @@ def test_namespace():
         }]
     }
     fastavro.parse_schema(model_avro)
-    assert json_to_avro(Model.schema(), namespace) == model_avro
+    assert json_to_avro(Model.schema(), namespace=namespace) == model_avro
 
 
 def test_int_and_string_model():
@@ -181,6 +181,35 @@ def test_union_model():
             }, {
                 'type': 'string'
             }]
+        }]
+    }
+    fastavro.parse_schema(model_avro)
+    assert json_to_avro(Model.schema()) == model_avro
+
+
+class OneIntModel(BaseModel):
+    int_field: int
+
+
+def test_simple_recursive_model():
+    class Model(BaseModel):
+        another_model: OneIntModel
+
+    model_avro = {
+        'name':
+        'Model',
+        'type':
+        'record',
+        'fields': [{
+            'name': 'another_model',
+            'type': {
+                'name': 'OneIntModel',
+                'type': 'record',
+                'fields': [{
+                    'name': 'int_field',
+                    'type': 'long'
+                }]
+            }
         }]
     }
     fastavro.parse_schema(model_avro)
