@@ -1,14 +1,14 @@
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 
 class JsonSchema:
-    def __init__(self, json_schema: dict):
+    def __init__(self, json_schema: dict, namespace: str = 'base'):
         self.schema = json_schema
+        self.namespace = namespace
+        self._parsed_objects = set()
 
-    def to_avro(self, namespace: Optional[str] = None) -> dict:
+    def to_avro(self) -> dict:
         result = self._get_avro_type_and_call(self.schema)
-        if namespace is not None:
-            result['namespace'] = namespace
         return result
 
     def _get_avro_type_and_call(self,
@@ -46,9 +46,17 @@ class JsonSchema:
 
     def _json_object_to_avro_record(self, json_object: dict) -> dict:
         required_field = json_object.get('required', [])
+        title = json_object['title']
+        record_namespace = f"{self.namespace}.{title}"
+        if record_namespace in self._parsed_objects:
+            return {'type': 'record', 'name': record_namespace}
+        else:
+            self._parsed_objects.add(record_namespace)
         return {
+            'namespace':
+            self.namespace,
             'name':
-            json_object['title'],
+            title,
             'type':
             'record',
             'fields': [

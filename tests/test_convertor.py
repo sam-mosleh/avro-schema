@@ -19,6 +19,7 @@ def test_string_model():
         string_field: str
 
     model_avro = {
+        'namespace': 'base',
         'name': 'Model',
         'type': 'record',
         'fields': [{
@@ -45,7 +46,7 @@ def test_namespace():
         }]
     }
     fastavro.parse_schema(model_avro)
-    assert JsonSchema(Model.schema()).to_avro(namespace) == model_avro
+    assert JsonSchema(Model.schema(), namespace).to_avro() == model_avro
 
 
 def test_int_and_string_model():
@@ -54,6 +55,8 @@ def test_int_and_string_model():
         string_field: str
 
     model_avro = {
+        'namespace':
+        'base',
         'name':
         'Model',
         'type':
@@ -76,6 +79,8 @@ def test_optional_and_default_model():
         default_int: int = 1000
 
     model_avro = {
+        'namespace':
+        'base',
         'name':
         'Model',
         'type':
@@ -99,6 +104,8 @@ def test_bytes_and_float_model():
         float_field: float
 
     model_avro = {
+        'namespace':
+        'base',
         'name':
         'Model',
         'type':
@@ -125,6 +132,8 @@ def test_enum_model():
         string_enum: StrEnum
 
     model_avro = {
+        'namespace':
+        'base',
         'name':
         'Model',
         'type':
@@ -147,6 +156,8 @@ def test_list_model():
         list_of_int: List[int]
 
     model_avro = {
+        'namespace':
+        'base',
         'name':
         'Model',
         'type':
@@ -170,6 +181,8 @@ def test_union_model():
         union_of_int_and_string: Union[int, str]
 
     model_avro = {
+        'namespace':
+        'base',
         'name':
         'Model',
         'type':
@@ -196,6 +209,8 @@ def test_simple_recursive_model():
         another_model: OneIntModel
 
     model_avro = {
+        'namespace':
+        'base',
         'name':
         'Model',
         'type':
@@ -203,6 +218,7 @@ def test_simple_recursive_model():
         'fields': [{
             'name': 'another_model',
             'type': {
+                'namespace': 'base',
                 'name': 'OneIntModel',
                 'type': 'record',
                 'fields': [{
@@ -226,6 +242,8 @@ def test_two_layer_recursive_model():
         layerd: LayeredModel
 
     model_avro = {
+        'namespace':
+        'base',
         'name':
         'Model',
         'type':
@@ -233,6 +251,8 @@ def test_two_layer_recursive_model():
         'fields': [{
             'name': 'layerd',
             'type': {
+                'namespace':
+                'base',
                 'name':
                 'LayeredModel',
                 'type':
@@ -240,6 +260,7 @@ def test_two_layer_recursive_model():
                 'fields': [{
                     'name': 'one_int',
                     'type': {
+                        'namespace': 'base',
                         'name': 'OneIntModel',
                         'type': 'record',
                         'fields': [{
@@ -251,6 +272,35 @@ def test_two_layer_recursive_model():
                     'name': 'string_field',
                     'type': 'string'
                 }]
+            }
+        }]
+    }
+    fastavro.parse_schema(model_avro)
+    assert JsonSchema(Model.schema()).to_avro() == model_avro
+
+
+def test_optional_self_reference_model():
+    class Model(BaseModel):
+        value: int
+        next_item: Optional[Model]
+
+    Model.update_forward_refs()
+
+    model_avro = {
+        'namespace':
+        'base',
+        'name':
+        'Model',
+        'type':
+        'record',
+        'fields': [{
+            'name': 'value',
+            'type': 'long'
+        }, {
+            'name': 'next_item',
+            'type': {
+                'name': 'base.Model',
+                'type': 'record',
             }
         }]
     }
