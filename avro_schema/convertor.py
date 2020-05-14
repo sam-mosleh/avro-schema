@@ -8,17 +8,17 @@ class JsonSchema:
         self._parsed_objects = set()
 
     def to_avro(self) -> dict:
-        result = self._get_avro_type_and_call(self.schema)
-        return result
+        return self._get_avro_type_and_call(self.schema)
 
     def _get_avro_type_and_call(self,
                                 schema: dict,
                                 name: Optional[str] = None,
-                                required: bool = True) -> dict:
+                                required: bool = True,
+                                namespace: Optional[str] = None) -> dict:
         type_field = schema.get('type')
         default = schema.get('default')
         if type_field == 'object':
-            return self._json_object_to_avro_record(schema)
+            return self._json_object_to_avro_record(schema, namespace)
         elif schema.get('format') == 'binary':
             return self._json_primitive_type_to_avro_field(
                 name, 'bytes', required, default)
@@ -36,32 +36,40 @@ class JsonSchema:
             raise TypeError(f"f{name} Cannot have Enum of type {type_field}")
         elif 'anyOf' in schema:
             return self._json_anyof_to_avro_union(name, schema)
+        elif 'allOf' in schema:
+            raise TypeError('Avro schema cannot have nested objects ' \
+                            'with default values.')
         elif '$ref' in schema:
-            return self._json_ref_to_avro_record(name, schema)
+            return self._json_ref_to_avro_record(name, schema, required)
         elif type_field == 'string':
             return self._json_primitive_type_to_avro_field(
                 name, 'string', required, default)
         else:
             raise TypeError(f"Unknown type.")
 
-    def _json_object_to_avro_record(self, json_object: dict) -> dict:
+    def _json_object_to_avro_record(self,
+                                    json_object: dict,
+                                    namespace: Optional[str] = None) -> dict:
         required_field = json_object.get('required', [])
         title = json_object['title']
-        record_namespace = f"{self.namespace}.{title}"
+        if namespace is None:
+            namespace = self.namespace
+        record_namespace = f"{namespace}.{title}"
         if record_namespace in self._parsed_objects:
             return {'type': 'record', 'name': record_namespace}
         else:
             self._parsed_objects.add(record_namespace)
         return {
             'namespace':
-            self.namespace,
+            namespace,
             'name':
             title,
             'type':
             'record',
             'fields': [
                 self._get_avro_type_and_call(property_data, property_name,
-                                             property_name in required_field)
+                                             property_name in required_field,
+                                             record_namespace)
                 for property_name, property_data in
                 json_object['properties'].items()
             ]
@@ -107,12 +115,16 @@ class JsonSchema:
             [self._get_avro_type_and_call(item) for item in schema['anyOf']]
         }
 
-    def _json_ref_to_avro_record(self, name: str, schema: dict):
+    def _json_ref_to_avro_record(self, name: str, schema: dict,
+                                 required: bool):
         selected_schema = self._find(schema['$ref'])
         if name is not None:
             return {
-                'name': name,
-                'type': self._get_avro_type_and_call(selected_schema)
+                'name':
+                name,
+                'type':
+                self._get_avro_type_and_call(selected_schema) if required else
+                ['null', self._get_avro_type_and_call(selected_schema)]
             }
         else:
             return self._get_avro_type_and_call(selected_schema)

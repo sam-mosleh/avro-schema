@@ -298,10 +298,10 @@ def test_optional_self_reference_model():
             'type': 'long'
         }, {
             'name': 'next_item',
-            'type': {
+            'type': ['null', {
                 'name': 'base.Model',
                 'type': 'record',
-            }
+            }]
         }]
     }
     fastavro.parse_schema(model_avro)
