@@ -18,7 +18,10 @@ class JsonSchema:
         type_field = schema.get('type')
         default = schema.get('default')
         if type_field == 'object':
-            return self._json_object_to_avro_record(schema, namespace)
+            if 'properties' in schema:
+                return self._json_object_to_avro_record(schema, namespace)
+            else:
+                return self._json_dict_to_avro_map(name, schema)
         elif schema.get('format') == 'binary':
             return self._json_primitive_type_to_avro_field(
                 name, 'bytes', required, default)
@@ -34,16 +37,16 @@ class JsonSchema:
             if type_field == 'string':
                 return self._json_enum_to_avro_enum(name, schema)
             raise TypeError(f"f{name} Cannot have Enum of type {type_field}")
-        elif 'anyOf' in schema:
-            return self._json_anyof_to_avro_union(name, schema)
-        elif 'allOf' in schema:
-            raise TypeError('Avro schema cannot have nested objects ' \
-                            'with default values.')
-        elif '$ref' in schema:
-            return self._json_ref_to_avro_record(name, schema, required)
         elif type_field == 'string':
             return self._json_primitive_type_to_avro_field(
                 name, 'string', required, default)
+        elif 'anyOf' in schema:
+            return self._json_anyof_to_avro_union(name, schema)
+        elif 'allOf' in schema:
+            raise TypeError(
+                'Avro schema cannot have nested objects with default values.')
+        elif '$ref' in schema:
+            return self._json_ref_to_avro_record(name, schema, required)
         else:
             raise TypeError(f"Unknown type.")
 
@@ -74,6 +77,15 @@ class JsonSchema:
                 json_object['properties'].items()
             ]
         }
+
+    def _json_dict_to_avro_map(self, name: str, schema: dict):
+        result = {'name': name} if name is not None else {}
+        result['type'] = {
+            'type': 'map',
+            'values':
+            self._get_avro_type_and_call(schema['additionalProperties'])
+        }
+        return result
 
     def _json_primitive_type_to_avro_field(
             self,

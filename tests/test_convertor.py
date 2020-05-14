@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import fastavro
 from pydantic import BaseModel
@@ -304,5 +304,31 @@ def test_optional_self_reference_model():
             }]
         }]
     }
+    fastavro.parse_schema(model_avro)
+    assert JsonSchema(Model.schema()).to_avro() == model_avro
+
+
+def test_dict_model():
+    class Model(BaseModel):
+        dict_field: Dict[str, float]
+
+    model_avro = {
+        'namespace':
+        'base',
+        'name':
+        'Model',
+        'type':
+        'record',
+        'fields': [{
+            'name': 'dict_field',
+            'type': {
+                'type': 'map',
+                'values': {
+                    'type': 'double'
+                }
+            }
+        }]
+    }
+    print(Model.schema_json(indent=2))
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
