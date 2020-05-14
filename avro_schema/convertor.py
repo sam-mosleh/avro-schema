@@ -89,13 +89,12 @@ class JsonSchema:
         return result
 
     def _json_array_to_avro_array(self, name: str, schema: dict):
-        return {
-            'name': name,
-            'type': {
-                'type': 'array',
-                'items': self._get_avro_type_and_call(schema['items'])
-            }
+        result = {'name': name} if name is not None else {}
+        result['type'] = {
+            'type': 'array',
+            'items': self._get_avro_type_and_call(schema['items'])
         }
+        return result
 
     def _json_enum_to_avro_enum(self, name: str, schema: dict):
         return {
@@ -107,13 +106,12 @@ class JsonSchema:
             }
         }
 
-    def _json_anyof_to_avro_union(self, name: str, schema: dict):
-        return {
-            'name':
-            name,
-            'type':
-            [self._get_avro_type_and_call(item) for item in schema['anyOf']]
-        }
+    def _json_anyof_to_avro_union(self, name: Optional[str], schema: dict):
+        result = {'name': name} if name is not None else {}
+        result['type'] = [
+            self._get_avro_type_and_call(item) for item in schema['anyOf']
+        ]
+        return result
 
     def _json_ref_to_avro_record(self, name: str, schema: dict,
                                  required: bool):
