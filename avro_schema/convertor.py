@@ -22,31 +22,33 @@ class JsonSchema:
                 return self._json_object_to_avro_record(schema, namespace)
             else:
                 return self._json_dict_to_avro_map(name, schema)
-        elif schema.get('format') == 'binary':
-            return self._json_primitive_type_to_avro_field(
-                name, 'bytes', required, default)
+        elif '$ref' in schema:
+            return self._json_ref_to_avro_record(name, schema, required)
+        elif type_field == 'array':
+            return self._json_array_to_avro_array(name, schema)
+        elif 'enum' in schema:
+            print('Type field =', type_field)
+            if type_field == 'string':
+                return self._json_enum_to_avro_enum(name, schema)
+            raise TypeError(f"f{name} Cannot have Enum of type {type_field}")
+        elif 'anyOf' in schema:
+            return self._json_anyof_to_avro_union(name, schema)
+        elif 'allOf' in schema:
+            raise TypeError(
+                'Avro schema cannot have nested objects with default values.')
+        elif type_field == 'string':
+            if schema.get('format') == 'binary':
+                return self._json_primitive_type_to_avro_field(
+                    name, 'bytes', required, default)
+            else:
+                return self._json_primitive_type_to_avro_field(
+                    name, 'string', required, default)
         elif type_field == 'integer':
             return self._json_primitive_type_to_avro_field(
                 name, 'long', required, default)
         elif type_field == 'number':
             return self._json_primitive_type_to_avro_field(
                 name, 'double', required, default)
-        elif type_field == 'array':
-            return self._json_array_to_avro_array(name, schema)
-        elif 'enum' in schema:
-            if type_field == 'string':
-                return self._json_enum_to_avro_enum(name, schema)
-            raise TypeError(f"f{name} Cannot have Enum of type {type_field}")
-        elif type_field == 'string':
-            return self._json_primitive_type_to_avro_field(
-                name, 'string', required, default)
-        elif 'anyOf' in schema:
-            return self._json_anyof_to_avro_union(name, schema)
-        elif 'allOf' in schema:
-            raise TypeError(
-                'Avro schema cannot have nested objects with default values.')
-        elif '$ref' in schema:
-            return self._json_ref_to_avro_record(name, schema, required)
         else:
             raise TypeError(f"Unknown type.")
 
@@ -62,21 +64,24 @@ class JsonSchema:
             return {'type': 'record', 'name': record_namespace}
         else:
             self._parsed_objects.add(record_namespace)
-        return {
-            'namespace':
-            namespace,
-            'name':
-            title,
-            'type':
-            'record',
-            'fields': [
-                self._get_avro_type_and_call(property_data, property_name,
-                                             property_name in required_field,
-                                             record_namespace)
-                for property_name, property_data in
-                json_object['properties'].items()
-            ]
-        }
+            result = {
+                'namespace':
+                namespace,
+                'name':
+                title,
+                'type':
+                'record',
+                'fields': [
+                    self._get_avro_type_and_call(
+                        property_data, property_name,
+                        property_name in required_field, record_namespace)
+                    for property_name, property_data in
+                    json_object['properties'].items()
+                ]
+            }
+            if 'description' in json_object:
+                result['doc'] = json_object['description']
+            return result
 
     def _json_dict_to_avro_map(self, name: str, schema: dict):
         result = {'name': name} if name is not None else {}
