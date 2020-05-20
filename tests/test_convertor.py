@@ -1,17 +1,36 @@
 from __future__ import annotations
 
-from enum import Enum
+from enum import Enum, IntEnum
 from typing import Dict, List, Optional, Union
 
 import fastavro
-from pydantic import BaseModel
-
+import pytest
 from avro_schema import __version__
 from avro_schema.convertor import JsonSchema
+from pydantic import BaseModel
 
 
 def test_version():
-    assert __version__ == '0.1.1'
+    assert __version__ == '0.2.0'
+
+
+def test_invalid_schema():
+    with pytest.raises(TypeError):
+        JsonSchema({}).to_avro()
+
+
+def test_empty_model():
+    class Model(BaseModel):
+        pass
+
+    model_avro = {
+        'namespace': 'base',
+        'name': 'Model',
+        'type': 'record',
+        'fields': []
+    }
+    fastavro.parse_schema(model_avro)
+    assert JsonSchema(Model.schema()).to_avro() == model_avro
 
 
 def test_string_model():
@@ -151,6 +170,32 @@ def test_enum_model():
     assert JsonSchema(Model.schema()).to_avro() == model_avro
 
 
+class IntegerEnum(IntEnum):
+    first = 10
+    second = 20
+
+
+class NoTypeEnum(Enum):
+    first = 10
+    second = 'twenty'
+
+
+def test_int_enum_model():
+    class Model(BaseModel):
+        int_enum: IntegerEnum
+
+    with pytest.raises(TypeError):
+        JsonSchema(Model.schema()).to_avro()
+
+
+def test_no_type_enum_model():
+    class Model(BaseModel):
+        e: NoTypeEnum
+
+    with pytest.raises(TypeError):
+        JsonSchema(Model.schema()).to_avro()
+
+
 def test_list_model():
     class Model(BaseModel):
         list_of_int: List[int]
@@ -232,6 +277,15 @@ def test_simple_recursive_model():
     assert JsonSchema(Model.schema()).to_avro() == model_avro
 
 
+def test_with_default_object_model():
+    class Model(BaseModel):
+        second: OneIntModel = OneIntModel(int_field=10)
+
+    with pytest.raises(TypeError):
+        print(Model.schema())
+        print(JsonSchema(Model.schema()).to_avro())
+
+
 class LayeredModel(BaseModel):
     one_int: OneIntModel
     string_field: str
@@ -308,6 +362,16 @@ def test_optional_self_reference_model():
     assert JsonSchema(Model.schema()).to_avro() == model_avro
 
 
+def test_outside_reference():
+    with pytest.raises(TypeError):
+        JsonSchema({'$ref': '#address'}).to_avro()
+
+
+def test_invalid_reference():
+    with pytest.raises(KeyError):
+        JsonSchema({'$ref': '#/definitions/Model'}).to_avro()
+
+
 def test_dict_model():
     class Model(BaseModel):
         dict_field: Dict[str, float]
@@ -329,6 +393,24 @@ def test_dict_model():
             }
         }]
     }
-    print(Model.schema_json(indent=2))
+    fastavro.parse_schema(model_avro)
+    assert JsonSchema(Model.schema()).to_avro() == model_avro
+
+
+def test_documentation_model():
+    class Model(BaseModel):
+        """This is a documentation"""
+        string_field: str
+
+    model_avro = {
+        'namespace': 'base',
+        'name': 'Model',
+        'type': 'record',
+        'doc': 'This is a documentation',
+        'fields': [{
+            'name': 'string_field',
+            'type': 'string'
+        }]
+    }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
