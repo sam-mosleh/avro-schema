@@ -106,7 +106,8 @@ def test_optional_and_default_model():
         'record',
         'fields': [{
             'name': 'optional_int',
-            'type': ['null', 'long']
+            'type': ['null', 'long'],
+            'default': None
         }, {
             'name': 'default_int',
             'type': 'long',
@@ -355,7 +356,8 @@ def test_optional_self_reference_model():
             'type': ['null', {
                 'name': 'base.Model',
                 'type': 'record',
-            }]
+            }],
+            'default': None
         }]
     }
     fastavro.parse_schema(model_avro)

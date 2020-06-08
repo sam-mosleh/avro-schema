@@ -19,38 +19,45 @@ class JsonSchema:
         default = schema.get('default')
         if type_field == 'object':
             if 'properties' in schema:
-                return self._json_object_to_avro_record(schema, namespace)
+                result = self._json_object_to_avro_record(schema, namespace)
             else:
-                return self._json_dict_to_avro_map(name, schema)
+                result = self._json_dict_to_avro_map(name, schema)
         elif '$ref' in schema:
-            return self._json_ref_to_avro_record(name, schema, required)
+            result = self._json_ref_to_avro_record(name, schema)
         elif type_field == 'array':
-            return self._json_array_to_avro_array(name, schema)
+            result = self._json_array_to_avro_array(name, schema)
         elif 'enum' in schema:
-            print('Type field =', type_field)
+            print('*' * 100)
+            print(type_field, type_field == 'string')
             if type_field == 'string':
-                return self._json_enum_to_avro_enum(name, schema)
-            raise TypeError(f"f{name} Cannot have Enum of type {type_field}")
+                result = self._json_enum_to_avro_enum(name, schema)
+            else:
+                raise TypeError(
+                    f"{name} Cannot have Enum of type {type_field}. Enums must be strings"
+                )
         elif 'anyOf' in schema:
-            return self._json_anyof_to_avro_union(name, schema)
+            result = self._json_anyof_to_avro_union(name, schema)
         elif 'allOf' in schema:
             raise TypeError(
                 'Avro schema cannot have nested objects with default values.')
         elif type_field == 'string':
             if schema.get('format') == 'binary':
-                return self._json_primitive_type_to_avro_field(
-                    name, 'bytes', required, default)
+                result = self._json_primitive_type_to_avro_field(
+                    name, 'bytes', default)
             else:
-                return self._json_primitive_type_to_avro_field(
-                    name, 'string', required, default)
+                result = self._json_primitive_type_to_avro_field(
+                    name, 'string', default)
         elif type_field == 'integer':
-            return self._json_primitive_type_to_avro_field(
-                name, 'long', required, default)
+            result = self._json_primitive_type_to_avro_field(
+                name, 'long', default)
         elif type_field == 'number':
-            return self._json_primitive_type_to_avro_field(
-                name, 'double', required, default)
+            result = self._json_primitive_type_to_avro_field(
+                name, 'double', default)
         else:
             raise TypeError(f"Unknown type.")
+        if default is None and not required:
+            result.update({'type': ['null', result['type']], 'default': None})
+        return result
 
     def _json_object_to_avro_record(self,
                                     json_object: dict,
@@ -96,11 +103,10 @@ class JsonSchema:
             self,
             name: Optional[str],
             object_type: str,
-            required: bool,
             default: Optional[Any] = None) -> dict:
         result = {'name': name} if name is not None else {}
         if default is None:
-            result['type'] = object_type if required else ['null', object_type]
+            result['type'] = object_type
         else:
             result.update({'type': object_type, 'default': default})
         return result
@@ -130,16 +136,12 @@ class JsonSchema:
         ]
         return result
 
-    def _json_ref_to_avro_record(self, name: str, schema: dict,
-                                 required: bool):
+    def _json_ref_to_avro_record(self, name: str, schema: dict):
         selected_schema = self._find(schema['$ref'])
         if name is not None:
             return {
-                'name':
-                name,
-                'type':
-                self._get_avro_type_and_call(selected_schema) if required else
-                ['null', self._get_avro_type_and_call(selected_schema)]
+                'name': name,
+                'type': self._get_avro_type_and_call(selected_schema)
             }
         else:
             return self._get_avro_type_and_call(selected_schema)
