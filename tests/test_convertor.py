@@ -5,13 +5,14 @@ from typing import Dict, List, Optional, Union
 
 import fastavro
 import pytest
+from pydantic import BaseModel
+
 from avro_schema import __version__
 from avro_schema.convertor import JsonSchema
-from pydantic import BaseModel
 
 
 def test_version():
-    assert __version__ == '0.2.0'
+    assert __version__ == "0.2.0"
 
 
 def test_invalid_schema():
@@ -23,12 +24,7 @@ def test_empty_model():
     class Model(BaseModel):
         pass
 
-    model_avro = {
-        'namespace': 'base',
-        'name': 'Model',
-        'type': 'record',
-        'fields': []
-    }
+    model_avro = {"namespace": "base", "name": "Model", "type": "record", "fields": []}
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
 
@@ -38,13 +34,10 @@ def test_string_model():
         string_field: str
 
     model_avro = {
-        'namespace': 'base',
-        'name': 'Model',
-        'type': 'record',
-        'fields': [{
-            'name': 'string_field',
-            'type': 'string'
-        }]
+        "namespace": "base",
+        "name": "Model",
+        "type": "record",
+        "fields": [{"name": "string_field", "type": "string"}],
     }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
@@ -54,15 +47,12 @@ def test_namespace():
     class Model(BaseModel):
         string_field: str
 
-    namespace = 'streamer'
+    namespace = "streamer"
     model_avro = {
-        'name': 'Model',
-        'type': 'record',
-        'namespace': namespace,
-        'fields': [{
-            'name': 'string_field',
-            'type': 'string'
-        }]
+        "name": "Model",
+        "type": "record",
+        "namespace": namespace,
+        "fields": [{"name": "string_field", "type": "string"}],
     }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema(), namespace).to_avro() == model_avro
@@ -74,19 +64,13 @@ def test_int_and_string_model():
         string_field: str
 
     model_avro = {
-        'namespace':
-        'base',
-        'name':
-        'Model',
-        'type':
-        'record',
-        'fields': [{
-            'name': 'int_field',
-            'type': 'long'
-        }, {
-            'name': 'string_field',
-            'type': 'string'
-        }]
+        "namespace": "base",
+        "name": "Model",
+        "type": "record",
+        "fields": [
+            {"name": "int_field", "type": "long"},
+            {"name": "string_field", "type": "string"},
+        ],
     }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
@@ -98,21 +82,13 @@ def test_optional_and_default_model():
         default_int: int = 1000
 
     model_avro = {
-        'namespace':
-        'base',
-        'name':
-        'Model',
-        'type':
-        'record',
-        'fields': [{
-            'name': 'optional_int',
-            'type': ['null', 'long'],
-            'default': None
-        }, {
-            'name': 'default_int',
-            'type': 'long',
-            'default': 1000
-        }]
+        "namespace": "base",
+        "name": "Model",
+        "type": "record",
+        "fields": [
+            {"name": "optional_int", "type": ["null", "long"], "default": None},
+            {"name": "default_int", "type": "long", "default": 1000},
+        ],
     }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
@@ -124,27 +100,21 @@ def test_bytes_and_float_model():
         float_field: float
 
     model_avro = {
-        'namespace':
-        'base',
-        'name':
-        'Model',
-        'type':
-        'record',
-        'fields': [{
-            'name': 'bytes_field',
-            'type': 'bytes'
-        }, {
-            'name': 'float_field',
-            'type': 'double'
-        }]
+        "namespace": "base",
+        "name": "Model",
+        "type": "record",
+        "fields": [
+            {"name": "bytes_field", "type": "bytes"},
+            {"name": "float_field", "type": "double"},
+        ],
     }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
 
 
 class StrEnum(str, Enum):
-    first = 'F'
-    second = 'S'
+    first = "F"
+    second = "S"
 
 
 def test_enum_model():
@@ -152,20 +122,15 @@ def test_enum_model():
         string_enum: StrEnum
 
     model_avro = {
-        'namespace':
-        'base',
-        'name':
-        'Model',
-        'type':
-        'record',
-        'fields': [{
-            'name': 'string_enum',
-            'type': {
-                'name': 'string_enum',
-                'type': 'enum',
-                'symbols': ['F', 'S']
+        "namespace": "base",
+        "name": "Model",
+        "type": "record",
+        "fields": [
+            {
+                "name": "string_enum",
+                "type": {"name": "string_enum", "type": "enum", "symbols": ["F", "S"]},
             }
-        }]
+        ],
     }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
@@ -178,7 +143,7 @@ class IntegerEnum(IntEnum):
 
 class NoTypeEnum(Enum):
     first = 10
-    second = 'twenty'
+    second = "twenty"
 
 
 def test_int_enum_model():
@@ -202,21 +167,15 @@ def test_list_model():
         list_of_int: List[int]
 
     model_avro = {
-        'namespace':
-        'base',
-        'name':
-        'Model',
-        'type':
-        'record',
-        'fields': [{
-            'name': 'list_of_int',
-            'type': {
-                'type': 'array',
-                'items': {
-                    'type': 'long'
-                }
+        "namespace": "base",
+        "name": "Model",
+        "type": "record",
+        "fields": [
+            {
+                "name": "list_of_int",
+                "type": {"type": "array", "items": {"type": "long"}},
             }
-        }]
+        ],
     }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
@@ -227,20 +186,15 @@ def test_union_model():
         union_of_int_and_string: Union[int, str]
 
     model_avro = {
-        'namespace':
-        'base',
-        'name':
-        'Model',
-        'type':
-        'record',
-        'fields': [{
-            'name': 'union_of_int_and_string',
-            'type': [{
-                'type': 'long'
-            }, {
-                'type': 'string'
-            }]
-        }]
+        "namespace": "base",
+        "name": "Model",
+        "type": "record",
+        "fields": [
+            {
+                "name": "union_of_int_and_string",
+                "type": [{"type": "long"}, {"type": "string"}],
+            }
+        ],
     }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
@@ -255,24 +209,20 @@ def test_simple_recursive_model():
         another_model: OneIntModel
 
     model_avro = {
-        'namespace':
-        'base',
-        'name':
-        'Model',
-        'type':
-        'record',
-        'fields': [{
-            'name': 'another_model',
-            'type': {
-                'namespace': 'base',
-                'name': 'OneIntModel',
-                'type': 'record',
-                'fields': [{
-                    'name': 'int_field',
-                    'type': 'long'
-                }]
+        "namespace": "base",
+        "name": "Model",
+        "type": "record",
+        "fields": [
+            {
+                "name": "another_model",
+                "type": {
+                    "namespace": "base",
+                    "name": "OneIntModel",
+                    "type": "record",
+                    "fields": [{"name": "int_field", "type": "long"}],
+                },
             }
-        }]
+        ],
     }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
@@ -297,38 +247,31 @@ def test_two_layer_recursive_model():
         layerd: LayeredModel
 
     model_avro = {
-        'namespace':
-        'base',
-        'name':
-        'Model',
-        'type':
-        'record',
-        'fields': [{
-            'name': 'layerd',
-            'type': {
-                'namespace':
-                'base',
-                'name':
-                'LayeredModel',
-                'type':
-                'record',
-                'fields': [{
-                    'name': 'one_int',
-                    'type': {
-                        'namespace': 'base',
-                        'name': 'OneIntModel',
-                        'type': 'record',
-                        'fields': [{
-                            'name': 'int_field',
-                            'type': 'long'
-                        }]
-                    }
-                }, {
-                    'name': 'string_field',
-                    'type': 'string'
-                }]
+        "namespace": "base",
+        "name": "Model",
+        "type": "record",
+        "fields": [
+            {
+                "name": "layerd",
+                "type": {
+                    "namespace": "base",
+                    "name": "LayeredModel",
+                    "type": "record",
+                    "fields": [
+                        {
+                            "name": "one_int",
+                            "type": {
+                                "namespace": "base",
+                                "name": "OneIntModel",
+                                "type": "record",
+                                "fields": [{"name": "int_field", "type": "long"}],
+                            },
+                        },
+                        {"name": "string_field", "type": "string"},
+                    ],
+                },
             }
-        }]
+        ],
     }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
@@ -342,23 +285,17 @@ def test_optional_self_reference_model():
     Model.update_forward_refs()
 
     model_avro = {
-        'namespace':
-        'base',
-        'name':
-        'Model',
-        'type':
-        'record',
-        'fields': [{
-            'name': 'value',
-            'type': 'long'
-        }, {
-            'name': 'next_item',
-            'type': ['null', {
-                'name': 'base.Model',
-                'type': 'record',
-            }],
-            'default': None
-        }]
+        "namespace": "base",
+        "name": "Model",
+        "type": "record",
+        "fields": [
+            {"name": "value", "type": "long"},
+            {
+                "name": "next_item",
+                "type": ["null", {"name": "base.Model", "type": "record",}],
+                "default": None,
+            },
+        ],
     }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
@@ -366,12 +303,12 @@ def test_optional_self_reference_model():
 
 def test_outside_reference():
     with pytest.raises(TypeError):
-        JsonSchema({'$ref': '#address'}).to_avro()
+        JsonSchema({"$ref": "#address"}).to_avro()
 
 
 def test_invalid_reference():
     with pytest.raises(KeyError):
-        JsonSchema({'$ref': '#/definitions/Model'}).to_avro()
+        JsonSchema({"$ref": "#/definitions/Model"}).to_avro()
 
 
 def test_dict_model():
@@ -379,21 +316,15 @@ def test_dict_model():
         dict_field: Dict[str, float]
 
     model_avro = {
-        'namespace':
-        'base',
-        'name':
-        'Model',
-        'type':
-        'record',
-        'fields': [{
-            'name': 'dict_field',
-            'type': {
-                'type': 'map',
-                'values': {
-                    'type': 'double'
-                }
+        "namespace": "base",
+        "name": "Model",
+        "type": "record",
+        "fields": [
+            {
+                "name": "dict_field",
+                "type": {"type": "map", "values": {"type": "double"}},
             }
-        }]
+        ],
     }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
@@ -402,17 +333,15 @@ def test_dict_model():
 def test_documentation_model():
     class Model(BaseModel):
         """This is a documentation"""
+
         string_field: str
 
     model_avro = {
-        'namespace': 'base',
-        'name': 'Model',
-        'type': 'record',
-        'doc': 'This is a documentation',
-        'fields': [{
-            'name': 'string_field',
-            'type': 'string'
-        }]
+        "namespace": "base",
+        "name": "Model",
+        "type": "record",
+        "doc": "This is a documentation",
+        "fields": [{"name": "string_field", "type": "string"}],
     }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
