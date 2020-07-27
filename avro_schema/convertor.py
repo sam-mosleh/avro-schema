@@ -118,8 +118,6 @@ class JsonSchema:
 
     def _json_enum_to_avro_enum(self, name: str, schema: dict):
         result = {
-            # "name": name,
-            # "type": {"name": name, "type": "enum", "symbols": schema["enum"]},
             "name": schema["title"],
             "type": "enum",
             "symbols": schema["enum"],
