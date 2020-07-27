@@ -117,6 +117,7 @@ class StrEnum(str, Enum):
     second = "S"
 
 
+@pytest.mark.xfail(reason="Avro schema doesnt support enums well.")
 def test_enum_model():
     class Model(BaseModel):
         string_enum: StrEnum
@@ -128,9 +129,28 @@ def test_enum_model():
         "fields": [
             {
                 "name": "string_enum",
-                "type": {"name": "StrEnum", "type": "enum", "symbols": ["F", "S"], "doc": "An enumeration."},
+                "type": {
+                    "name": "StrEnum",
+                    "type": "enum",
+                    "symbols": ["F", "S"],
+                    "doc": "An enumeration.",
+                },
             }
         ],
+    }
+    fastavro.parse_schema(model_avro)
+    assert JsonSchema(Model.schema()).to_avro() == model_avro
+
+
+def test_new_enum_model():
+    class Model(BaseModel):
+        string_enum: StrEnum
+
+    model_avro = {
+        "namespace": "base",
+        "name": "Model",
+        "type": "record",
+        "fields": [{"name": "string_enum", "type": "string"}],
     }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
@@ -146,12 +166,27 @@ class NoTypeEnum(Enum):
     second = "twenty"
 
 
+@pytest.mark.xfail(reason="Avro schema doesnt support enums well.")
 def test_int_enum_model():
     class Model(BaseModel):
         int_enum: IntegerEnum
 
     with pytest.raises(TypeError):
         JsonSchema(Model.schema()).to_avro()
+
+
+def test_new_int_enum_model():
+    class Model(BaseModel):
+        int_enum: IntegerEnum
+
+    model_avro = {
+        "namespace": "base",
+        "name": "Model",
+        "type": "record",
+        "fields": [{"name": "int_enum", "type": "long"}],
+    }
+    fastavro.parse_schema(model_avro)
+    assert JsonSchema(Model.schema()).to_avro() == model_avro
 
 
 def test_no_type_enum_model():

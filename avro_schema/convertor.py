@@ -28,13 +28,13 @@ class JsonSchema:
             result = self._json_ref_to_avro_record(name, schema, namespace)
         elif type_field == "array":
             result = self._json_array_to_avro_array(name, schema)
-        elif "enum" in schema:
-            if type_field == "string":
-                result = self._json_enum_to_avro_enum(name, schema)
-            else:
-                raise TypeError(
-                    f"{name} Cannot have Enum of type {type_field}. Enums must be strings"
-                )
+        # elif "enum" in schema:
+        #     if type_field == "string":
+        #         result = self._json_enum_to_avro_enum(name, schema)
+        #     else:
+        #         raise TypeError(
+        #             f"{name} Cannot have Enum of type {type_field}. Enums must be strings"
+        #         )
         elif "anyOf" in schema:
             result = self._json_anyof_to_avro_union(name, schema)
         elif "allOf" in schema:
@@ -122,7 +122,7 @@ class JsonSchema:
             # "type": {"name": name, "type": "enum", "symbols": schema["enum"]},
             "name": schema["title"],
             "type": "enum",
-            "symbols": schema["enum"]
+            "symbols": schema["enum"],
         }
         if "description" in schema:
             result["doc"] = schema["description"]
@@ -135,7 +135,9 @@ class JsonSchema:
         ]
         return result
 
-    def _json_ref_to_avro_record(self, name: str, schema: dict, namespace: Optional[str] = None):
+    def _json_ref_to_avro_record(
+        self, name: str, schema: dict, namespace: Optional[str] = None
+    ):
         selected_schema = self._find(schema["$ref"])
         if name is not None:
             return {"name": name, "type": self._get_avro_type_and_call(selected_schema)}
