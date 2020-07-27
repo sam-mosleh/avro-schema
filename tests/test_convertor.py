@@ -12,7 +12,7 @@ from avro_schema.convertor import JsonSchema
 
 
 def test_version():
-    assert __version__ == "0.2.1"
+    assert __version__ == "0.2.2"
 
 
 def test_invalid_schema():
@@ -128,7 +128,7 @@ def test_enum_model():
         "fields": [
             {
                 "name": "string_enum",
-                "type": {"name": "string_enum", "type": "enum", "symbols": ["F", "S"]},
+                "type": {"name": "StrEnum", "type": "enum", "symbols": ["F", "S"], "doc": "An enumeration."},
             }
         ],
     }
@@ -280,7 +280,7 @@ def test_two_layer_recursive_model():
 def test_optional_self_reference_model():
     class Model(BaseModel):
         value: int
-        next_item: Optional[Model]
+        next_item: Optional[Model] = None
 
     Model.update_forward_refs()
 

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "avro-schema"
-version = "0.2.1"
+version = "0.2.2"
 description = ""
 authors = ["Sam <sam.mosleh@ut.ac.ir>"]
 license = "BSD-3-Clause"
@@ -14,7 +14,7 @@ python = "^3.8"
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
 fastavro = "^0.23.3"
-pydantic = "^1.5.1"
+pydantic = "^1.6"
 pytest-cov = "^2.8.1"
 black = "^19.10b0"
 isort = "^4.3.21"
