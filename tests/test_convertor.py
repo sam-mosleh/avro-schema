@@ -1,19 +1,20 @@
 from __future__ import annotations
 
+import datetime
+import uuid
 from enum import Enum, IntEnum
 from typing import Dict, List, Optional, Union
 
 import fastavro
 import pytest
 from pydantic import BaseModel
-import uuid
-import datetime
+
 from avro_schema import __version__
 from avro_schema.convertor import JsonSchema
 
 
 def test_version():
-    assert __version__ == "0.3.0"
+    assert __version__ == "0.3.1"
 
 
 def test_invalid_schema():
@@ -409,4 +410,3 @@ def test_logical_types_model():
     }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
-
