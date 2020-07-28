@@ -35,19 +35,19 @@ class JsonSchema:
                 "Avro schema cannot have nested objects with default values."
             )
         elif type_field == "string":
-            if schema.get("format") == "binary":
+            fmt = schema.get("format")
+            json_format_to_logical_types = {
+                "uuid": ("string", "uuid"),
+                "date": ("int", "date"),
+                "time": ("long", "time-micros"),
+                "date-time": ("long", "timestamp-micros"),
+            }
+            if fmt == "binary":
                 result = self._json_primitive_type_to_avro_field(name, "bytes", default)
-            elif fmt == "date":
+            elif fmt in json_format_to_logical_types:
+                obj_type, log_type = json_format_to_logical_types[fmt]
                 result = self._json_logical_type_to_avro_field(
-                    name, "int", "date", default
-                )
-            elif fmt == "time":
-                result = self._json_logical_type_to_avro_field(
-                    name, "long", "time-micros", default
-                )
-            elif fmt == "date-time":
-                result = self._json_logical_type_to_avro_field(
-                    name, "long", "timestamp-micros", default
+                    name, obj_type, log_type, default
                 )
             else:
                 result = self._json_primitive_type_to_avro_field(

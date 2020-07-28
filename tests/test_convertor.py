@@ -6,7 +6,8 @@ from typing import Dict, List, Optional, Union
 import fastavro
 import pytest
 from pydantic import BaseModel
-
+import uuid
+import datetime
 from avro_schema import __version__
 from avro_schema.convertor import JsonSchema
 
@@ -380,3 +381,32 @@ def test_documentation_model():
     }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
+
+
+def test_logical_types_model():
+    class Model(BaseModel):
+        uuid_field: uuid.UUID
+        date_field: datetime.date
+        time_field: datetime.time
+        datetime_field: datetime.datetime
+
+    model_avro = {
+        "namespace": "base",
+        "name": "Model",
+        "type": "record",
+        "fields": [
+            {"name": "uuid_field", "type": {"type": "string", "logicalType": "uuid"}},
+            {"name": "date_field", "type": {"type": "int", "logicalType": "date"}},
+            {
+                "name": "time_field",
+                "type": {"type": "long", "logicalType": "time-micros"},
+            },
+            {
+                "name": "datetime_field",
+                "type": {"type": "long", "logicalType": "timestamp-micros"},
+            },
+        ],
+    }
+    fastavro.parse_schema(model_avro)
+    assert JsonSchema(Model.schema()).to_avro() == model_avro
+
