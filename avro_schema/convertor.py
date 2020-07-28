@@ -28,13 +28,6 @@ class JsonSchema:
             result = self._json_ref_to_avro_record(name, schema, namespace)
         elif type_field == "array":
             result = self._json_array_to_avro_array(name, schema)
-        # elif "enum" in schema:
-        #     if type_field == "string":
-        #         result = self._json_enum_to_avro_enum(name, schema)
-        #     else:
-        #         raise TypeError(
-        #             f"{name} Cannot have Enum of type {type_field}. Enums must be strings"
-        #         )
         elif "anyOf" in schema:
             result = self._json_anyof_to_avro_union(name, schema)
         elif "allOf" in schema:
@@ -44,6 +37,18 @@ class JsonSchema:
         elif type_field == "string":
             if schema.get("format") == "binary":
                 result = self._json_primitive_type_to_avro_field(name, "bytes", default)
+            elif fmt == "date":
+                result = self._json_logical_type_to_avro_field(
+                    name, "int", "date", default
+                )
+            elif fmt == "time":
+                result = self._json_logical_type_to_avro_field(
+                    name, "long", "time-micros", default
+                )
+            elif fmt == "date-time":
+                result = self._json_logical_type_to_avro_field(
+                    name, "long", "timestamp-micros", default
+                )
             else:
                 result = self._json_primitive_type_to_avro_field(
                     name, "string", default
@@ -106,6 +111,19 @@ class JsonSchema:
             result["type"] = object_type
         else:
             result.update({"type": object_type, "default": default})
+        return result
+
+    def _json_logical_type_to_avro_field(
+        self,
+        name: Optional[str],
+        object_type: str,
+        logical_type: str,
+        default: Optional[Any] = None,
+    ) -> dict:
+        result = {"name": name} if name is not None else {}
+        result["type"] = {"type": object_type, "logicalType": logical_type}
+        if default is not None:
+            result["type"]["default"] = default
         return result
 
     def _json_array_to_avro_array(self, name: str, schema: dict):
