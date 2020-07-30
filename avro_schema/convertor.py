@@ -34,6 +34,13 @@ class JsonSchema:
             raise TypeError(
                 "Avro schema cannot have nested objects with default values."
             )
+        elif "enum" in schema and name is None:
+            if type_field == "string":
+                return "string"
+            elif type_field == "integer":
+                return "long"
+            else:
+                raise TypeError("Enum type not recognized")
         elif type_field == "string":
             fmt = schema.get("format")
             json_format_to_logical_types = {

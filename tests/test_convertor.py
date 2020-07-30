@@ -144,6 +144,31 @@ def test_enum_model():
     assert JsonSchema(Model.schema()).to_avro() == model_avro
 
 
+def test_old_enum_with_default_model():
+    model_schema = {
+        "title": "Model",
+        "type": "object",
+        "properties": {
+            "string_enum": {
+                "title": "StrEnum",
+                "default": "F",
+                "enum": ["F", "S"],
+                "type": "string",
+            }
+        },
+        "required": ["string_enum"],
+    }
+
+    model_avro = {
+        "namespace": "base",
+        "name": "Model",
+        "type": "record",
+        "fields": [{"name": "string_enum", "type": "string", "default": "F"}],
+    }
+    fastavro.parse_schema(model_avro)
+    assert JsonSchema(model_schema).to_avro() == model_avro
+
+
 def test_new_enum_model():
     class Model(BaseModel):
         string_enum: StrEnum
