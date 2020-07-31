@@ -435,3 +435,17 @@ def test_logical_types_model():
     }
     fastavro.parse_schema(model_avro)
     assert JsonSchema(Model.schema()).to_avro() == model_avro
+
+
+def test_boolean_type_model():
+    class Model(BaseModel):
+        bool_field: bool
+
+    model_avro = {
+        "namespace": "base",
+        "name": "Model",
+        "type": "record",
+        "fields": [{"name": "bool_field", "type": "boolean",}],
+    }
+    fastavro.parse_schema(model_avro)
+    assert JsonSchema(Model.schema()).to_avro() == model_avro

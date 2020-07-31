@@ -64,6 +64,8 @@ class JsonSchema:
             result = self._json_primitive_type_to_avro_field(name, "long", default)
         elif type_field == "number":
             result = self._json_primitive_type_to_avro_field(name, "double", default)
+        elif type_field == "boolean":
+            result = self._json_primitive_type_to_avro_field(name, "boolean", default)
         else:
             raise TypeError(f"Unknown type.")
         if default is None and not required:
