@@ -14,7 +14,7 @@ from avro_schema.convertor import JsonSchema
 
 
 def test_version():
-    assert __version__ == "0.3.2"
+    assert __version__ == "0.3.3"
 
 
 def test_invalid_schema():
